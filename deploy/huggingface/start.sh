@@ -1,66 +1,56 @@
 #!/usr/bin/env bash
-
 set -Eeuo pipefail
-
+export OHAMLAB_DEBUG="${OHAMLAB_DEBUG:-0}"
+export OHAMLAB_REFRESH_AUDIO="${OHAMLAB_REFRESH_AUDIO:-0}"
+START_SECONDS=$SECONDS
+log_stage() { echo "[TIMING] +$((SECONDS - START_SECONDS))s $*"; }
 # ============================================================
 # OHAMLAB HARNESS CONFIGURATION
 # ============================================================
-
 export OHAMLAB_HARNESS_HOME="${OHAMLAB_HARNESS_HOME:-/app/ohamlab-harness}"
-# Keep active DSH data on a POSIX filesystem. HF bucket FUSE does not
-# support hard-link operations used by the session journal.
 export DSH_HOME=/data/dsh
 export OHAMLAB_PERSISTENT_DSH_HOME=/data/dsh
 export DSH_HOST="${DSH_HOST:-127.0.0.1}"
 export DSH_PORT="${DSH_PORT:-3080}"
 export PORT="${PORT:-7860}"
-
-INSTALL_MARKER="${DSH_HOME}/.ohamlab-installed-v2"
+export OHAMLAB_REPO_URL="https://github.com/innokria/ohamlab-harness.git"
+export OHAMLAB_HARNESS_TAG=main
+export OHAMLAB_INTEGRATION_TAG=main
+export DSH_TELEMETRY_DISABLED=1
+unset DEEPSEEK_API_KEY
+export GRADIO_ANALYTICS_ENABLED=False
 export HARNS_BRAND_NAME="OhamLab"
-
-
+# VoiceStudio Python service
+export OHAMLAB_AUDIO_REPO="${OHAMLAB_AUDIO_REPO:-https://github.com/innokria/ohamlab-voicestudio.git}"
+export OHAMLAB_AUDIO_HOME="${OHAMLAB_AUDIO_HOME:-/app/ohamlab-voicestudio}"
+export OHAMLAB_AUDIO_VENV="${OHAMLAB_AUDIO_VENV:-/app/ohamlab-voice-venv}"
+export OHAMLAB_AUDIO_HOST="${OHAMLAB_AUDIO_HOST:-127.0.0.1}"
+export OHAMLAB_AUDIO_PORT="${OHAMLAB_AUDIO_PORT:-8765}"
+export OHAMLAB_AUDIO_MODEL="${OHAMLAB_AUDIO_MODEL:-rahul7star/tts-nano-o-hi}"
+AUDIO_PID=""
+BACKUP_PID=""
+HARNESS_PID=""
 # ============================================================
 # DISABLE DSH SESSION TELEMETRY
 # ============================================================
-
-export DSH_TELEMETRY_DISABLED=1
-unset DEEPSEEK_API_KEY DEEPSEEK_BASE_URL
 export DSH_TELEMETRY_MODE="DISABLED"
 export DSH_TELEMETRY_OTLP_URL=""
 export OTEL_SDK_DISABLED="true"
-
 echo "[OHAMLAB] Session telemetry disabled."
-
-
-
 # ============================================================
 # SESSION PERSISTENCE CONFIGURATION
 # ============================================================
-
-# Harness session path
 SESSION_DIR="${DSH_HOME}/sessions"
-
-# Active sessions use local filesystem to support hard links
 LOCAL_SESSION_DIR="${OHAMLAB_LOCAL_SESSION_DIR:-/tmp/ohamlab-dsh-sessions}"
-
-# Persistent backup on Hugging Face storage
 BACKUP_DIR="${OHAMLAB_PERSISTENT_DSH_HOME}/session-backup"
 BACKUP_FILE="${BACKUP_DIR}/sessions.tar.gz"
-
-# Backup every hour
 BACKUP_INTERVAL=3600
-
-BACKUP_PID=""
-HARNESS_PID=""
-
 echo "=========================================================="
 echo "[OHAMLAB] Starting OhamLab Harness"
 echo "=========================================================="
-
 # ============================================================
 # PREPARE DIRECTORIES
 # ============================================================
-
 mkdir -p \
     "${DSH_HOME}/plugins" \
     "${DSH_HOME}/skills" \
@@ -69,28 +59,23 @@ mkdir -p \
     "${DSH_HOME}/cache" \
     "${DSH_HOME}/logs" \
     "${LOCAL_SESSION_DIR}"
-
 # ============================================================
-# USE THE PERSISTENT PROFILE DIRECTLY (NO /tmp PROFILE COPY)
+# USE PERSISTENT PROFILE DIRECTLY
 # ============================================================
 echo "[OHAMLAB] DSH_HOME: ${DSH_HOME}"
 echo "[OHAMLAB] Standard CLI profile: ${DSH_HOME}/profiles/web"
-echo "[OHAMLAB] Requested alternate path: ${DSH_HOME}/web/profile"
-# The DSH CLI has demonstrably resolved profiles/web. Do not assume that
-# web/profile is a supported profile location or overwrite it.
 if [ -f "${DSH_HOME}/web/profile/package.json" ]; then
-    echo '[OHAMLAB] NOTE: /data/dsh/web/profile exists; CLI still uses profiles/web unless configured otherwise.'
+    echo '[OHAMLAB] NOTE: /data/dsh/web/profile exists; CLI uses profiles/web.'
 fi
-# HF storage cannot hard-link session journal files. Keep only sessions local.
-# Never delete or replace an existing persistent sessions directory automatically.
+# Active sessions must remain on a local POSIX filesystem.
 if [ -L "${SESSION_DIR}" ]; then
     if [ "$(readlink -f "${SESSION_DIR}")" != "$(readlink -f "${LOCAL_SESSION_DIR}")" ]; then
-        echo "[OHAMLAB] ERROR: Existing sessions symlink points elsewhere: ${SESSION_DIR}"
+        echo "[OHAMLAB] ERROR: Existing sessions symlink points elsewhere."
         exit 1
     fi
 elif [ -e "${SESSION_DIR}" ]; then
     echo "[OHAMLAB] ERROR: ${SESSION_DIR} is an existing directory on HF storage."
-    echo '[OHAMLAB] Existing data was NOT changed. Move it aside after backing it up, then restart.'
+    echo '[OHAMLAB] Existing data was NOT changed.'
     exit 1
 else
     ln -s "${LOCAL_SESSION_DIR}" "${SESSION_DIR}"
@@ -99,262 +84,98 @@ printf test > "${LOCAL_SESSION_DIR}/.hardlink-test.tmp"
 ln "${LOCAL_SESSION_DIR}/.hardlink-test.tmp" "${LOCAL_SESSION_DIR}/.hardlink-test"
 rm -f "${LOCAL_SESSION_DIR}/.hardlink-test.tmp" "${LOCAL_SESSION_DIR}/.hardlink-test"
 echo '[OHAMLAB] PASS: local session hard-link test'
-
 # ============================================================
 # VERIFY DEPENDENCIES
 # ============================================================
-
 echo "[OHAMLAB] Checking dependencies..."
-
-python --version
-ohamlab-harness --version
-
+if command -v python3 >/dev/null 2>&1; then
+    python3 --version
+elif command -v python >/dev/null 2>&1; then
+    python --version
+else
+    echo '[OHAMLAB] ERROR: Python is required by this deployment.'
+    exit 1
+fi
+if command -v ohamlab-harness >/dev/null 2>&1; then
+    ohamlab-harness --version || echo '[OHAMLAB] WARNING: harness version check failed'
+else
+    echo '[OHAMLAB] ERROR: ohamlab-harness command not found.'
+    exit 1
+fi
 command -v tar >/dev/null || {
     echo "[OHAMLAB] ERROR: tar is not installed."
     exit 1
 }
-
 # ============================================================
-# SESSION BACKUP FUNCTION
+# SESSION BACKUP
 # ============================================================
-
 backup_sessions() {
-
     local TEMP_BACKUP="/tmp/ohamlab-session-backup.$$.tar.gz"
-
     echo "[OHAMLAB] Creating session backup..."
-
     if tar -czf "${TEMP_BACKUP}" \
         -C "$(dirname "${LOCAL_SESSION_DIR}")" \
         "$(basename "${LOCAL_SESSION_DIR}")"; then
-
         mv -f "${TEMP_BACKUP}" "${BACKUP_FILE}"
-
         echo "[OHAMLAB] Session backup successful."
         echo "[OHAMLAB] Backup: ${BACKUP_FILE}"
-
     else
-
         rm -f "${TEMP_BACKUP}"
-
         echo "[OHAMLAB] ERROR: Session backup failed."
         return 1
-
     fi
 }
-
 # ============================================================
-# RESTORE SESSIONS ON STARTUP
+# RESTORE SESSIONS
 # ============================================================
-
 restore_sessions() {
-
     if [ ! -f "${BACKUP_FILE}" ]; then
-
         echo "[OHAMLAB] No previous session backup found."
         return 0
-
     fi
-
-    if [ -z "$(find "${LOCAL_SESSION_DIR}" \
-        -mindepth 1 -maxdepth 1 -print -quit)" ]; then
-
+    if [ -z "$(find "${LOCAL_SESSION_DIR}" -mindepth 1 -maxdepth 1 -print -quit)" ]; then
         echo "[OHAMLAB] Restoring previous sessions..."
-
         if tar -tzf "${BACKUP_FILE}" >/dev/null 2>&1; then
-
             tar -xzf "${BACKUP_FILE}" \
                 -C "${LOCAL_SESSION_DIR}" \
                 --strip-components=1
-
             echo "[OHAMLAB] Session restoration successful."
-
         else
-
             echo "[OHAMLAB] ERROR: Invalid session backup."
             return 1
-
         fi
-
     else
-
         echo "[OHAMLAB] Existing local sessions detected."
         echo "[OHAMLAB] Skipping restoration."
-
     fi
 }
-
 # ============================================================
-# AUTOMATIC HOURLY BACKUP
+# HOURLY BACKUP WORKER
 # ============================================================
-
 hourly_backup() {
-
     echo "[OHAMLAB] Hourly session backup enabled."
-
     while true; do
-
         sleep "${BACKUP_INTERVAL}"
-
         backup_sessions || true
-
     done
 }
-
 # ============================================================
-# INSTALL OR REPAIR OHAMLAB HARNESS
+# VERIFY BUILT APPLICATION (no runtime installation)
 # ============================================================
-
-if [ ! -f "${INSTALL_MARKER}" ] || \
-   [ ! -f "${OHAMLAB_HARNESS_HOME}/app/package.json" ]; then
-
-    echo "[OHAMLAB] Installation missing or incomplete."
-    echo "[OHAMLAB] Running installation..."
-
-    ohamlab-harness install --force
-
-    if [ ! -f "${OHAMLAB_HARNESS_HOME}/app/package.json" ]; then
-
-        echo "[OHAMLAB] ERROR: Harness installation failed."
-        exit 1
-
-    fi
-
-    touch "${INSTALL_MARKER}"
-
-    echo "[OHAMLAB] Installation verified."
-
-else
-
-    echo "[OHAMLAB] Existing OhamLab installation detected."
-
-fi
-
-
-
-restore_sessions
-
-
-
-## TEST
-# ==========================================================
-# 2b. Optional plugins
-# ==========================================================
-
-echo
-echo "=========================================================="
-echo "[2b/8] Installing optional plugins"
-echo "=========================================================="
-
-export PROBE_DISABLED=1
-
-
-# Resolve the real Harness app before running any DSH plugin command.
-resolve_dsh_app_dir() {
-    local root
-    for root in \
-        "${OHAMLAB_HARNESS_HOME}/app" \
-        "${OHAMLAB_HARNESS_HOME}" \
-        /app/deepseek-harness \
-        /app/deepseek-harness/app; do
-        if [ -f "${root}/package.json" ] && [ -f "${root}/apps/cli/src/bin.ts" ]; then
-            printf '%s\n' "${root}"
-            return 0
-        fi
-    done
-    return 1
-}
-
-if ! DSH_APP_DIR="$(resolve_dsh_app_dir)"; then
-    echo '[OHAMLAB] ERROR: Cannot locate Harness source with apps/cli/src/bin.ts'
-    exit 1
-fi
+DSH_APP_DIR="${OHAMLAB_HARNESS_HOME}/app"
 export DSH_APP_DIR
-echo "[OHAMLAB] Harness app directory: ${DSH_APP_DIR}"
-PROFILE_DIR="${DSH_HOME}/profiles/web"
-
-
-echo "[OHAMLAB] Built-in branding, voice and MCP; skipping remote plugin installation."
-
+ test -f "${DSH_APP_DIR}/package.json"
+restore_sessions
+# Reject legacy profiles instead of silently loading old plugins.
+for profile in "${DSH_HOME}/profiles/web" "${DSH_HOME}/web/profile"; do
+    if [ -f "${profile}/package.json" ] && grep -Eq '@deepseek-ai/|@ohamlab/harness-(brand|voice)' "${profile}/package.json"; then
+        echo "[OHAMLAB] Legacy profile detected: ${profile}. Back it up and move it aside before restarting."
+        exit 1
+    fi
+done
 # ============================================================
-# Legacy remote shortcuts installation removed.
-
-# Persist repaired profile metadata for the next Space restart. Avoid copying
-# node_modules back to the bucket (large and full of symlinks).
-if [ -f "${DSH_HOME}/profiles/web/package.json" ]; then
-    mkdir -p "${OHAMLAB_PERSISTENT_DSH_HOME}/profiles/web"
-    for f in package.json cordis.yml cordis.patch.yml pnpm-lock.yaml pnpm-workspace.yaml; do
-        if [ -f "${DSH_HOME}/profiles/web/${f}" ]; then
-            cp -f "${DSH_HOME}/profiles/web/${f}" "${OHAMLAB_PERSISTENT_DSH_HOME}/profiles/web/${f}" || true
-        fi
-    done
-fi
-
-
-
-
+# DETECT PYTHON
 # ============================================================
-# OHAMLAB BRANDING - CORDIS PATCH
-# ============================================================
-
-# ============================================================
-# OHAMLAB BRANDING - CORDIS PATCH INVESTIGATION
-# ============================================================
-
-echo "=========================================================="
-echo "[OHAMLAB] Investigating Cordis insertion syntax"
-echo "=========================================================="
-
-PROFILE="${DSH_HOME}/profiles/web"
-APP="${DSH_APP_DIR:-/app/ohamlab-harness/app}"
-PATCH="${PROFILE}/cordis.patch.yml"
-
-# Remove only the invalid patch we previously generated.
-if [ -f "${PATCH}" ] &&
-   grep -q 'id: ui-brand-ohamlab' "${PATCH}" &&
-   ! grep -q 'insert:' "${PATCH}"; then
-
-    cp "${PATCH}" "${PATCH}.invalid-brand-backup"
-
-    cat > "${PATCH}" <<'YAML'
-[]
-YAML
-
-    echo "[OHAMLAB] Removed invalid branding patch."
-fi
-
-echo "[OHAMLAB] Searching installed DSH source for patch syntax..."
-
-grep -RInE \
-  --include='*.ts' \
-  --include='*.yml' \
-  --include='*.yaml' \
-  --exclude-dir=node_modules \
-  'insert:|before:|after:|patch: entry|insertBefore|insertAfter' \
-  "${APP}/apps" \
-  "${APP}/packages" \
-  2>/dev/null | head -100 || true
-
-echo "[OHAMLAB] Current patch:"
-cat "${PATCH}"
-
-echo "=========================================================="
-
-echo "=========================================================="
-# ------------------------------------------------------------
-# 4. Verify local Search and Agent Lab packages
-# ------------------------------------------------------------
-# ------------------------------------------------------------
-# Detect Python interpreter
-# ------------------------------------------------------------
-
-echo "[OHAMLAB] Starting Harness..."
-
-
-
-
 echo "[OHAMLAB] Detecting Python..."
-
 if [ -n "${OHAM_PYTHON:-}" ]; then
     if ! command -v "${OHAM_PYTHON}" >/dev/null 2>&1; then
         echo "[OHAMLAB] ERROR: Configured Python not found: ${OHAM_PYTHON}"
@@ -365,332 +186,172 @@ elif command -v python3 >/dev/null 2>&1; then
 elif command -v python >/dev/null 2>&1; then
     OHAM_PYTHON="$(command -v python)"
 else
-    echo "[OHAMLAB] ERROR: Neither python3 nor python is installed!"
+    echo "[OHAMLAB] ERROR: Python not installed."
     exit 1
 fi
-
+export OHAM_PYTHON
 echo "[OHAMLAB] PASS: Python found at ${OHAM_PYTHON}"
-
 "${OHAM_PYTHON}" --version
+
+
+
+
+# ============================================================
+# VOICE UI PLUGIN
+# ============================================================
+# harness-voice is installed directly from vendor/ohamlab/plugins.
+# Its committed client.js/index.js and Cordis patch are used as-is.
+# Do not run a build step or expect lib/client.js.
+
+# ============================================================
+# INSTALL AND START VOICESTUDIO
+# ============================================================
+install_ohamlab_audio() {
+    local repo="${OHAMLAB_AUDIO_HOME}"
+    local venv="${OHAMLAB_AUDIO_VENV}"
+    local cli="${venv}/bin/ohamlab-voice"
+    local log="${DSH_HOME}/logs/voicestudio.log"
+    echo
+    echo "=========================================================="
+    echo "[OHAMLAB AUDIO] Installing OhamLab VoiceStudio"
+    echo "=========================================================="
+    command -v git >/dev/null 2>&1 || {
+        echo '[OHAMLAB AUDIO] WARNING: git unavailable; skipping VoiceStudio'
+        return 1
+    }
+    if [ "$OHAMLAB_REFRESH_AUDIO" = 0 ] && [ -x "$cli" ] && [ -f "${repo}/pyproject.toml" ] && [ -f "${venv}/.ohamlab-audio-ready" ]; then
+        echo "[OHAMLAB AUDIO] Existing installation verified."
+    else
+    if [ -d "${repo}/.git" ]; then
+        echo "[OHAMLAB AUDIO] Updating ${repo} from main"
+        git -C "${repo}" fetch --depth 1 origin main || {
+            echo '[OHAMLAB AUDIO] WARNING: git fetch failed'
+            return 1
+        }
+        git -C "${repo}" checkout -f main >/dev/null 2>&1 || true
+        git -C "${repo}" reset --hard origin/main || {
+            echo '[OHAMLAB AUDIO] WARNING: git reset failed'
+            return 1
+        }
+    else
+        rm -rf "${repo}"
+        git clone --depth 1 --branch main \
+            "${OHAMLAB_AUDIO_REPO}" "${repo}" || {
+            echo '[OHAMLAB AUDIO] WARNING: clone failed'
+            return 1
+        }
+    fi
+    [ -f "${repo}/pyproject.toml" ] || {
+        echo '[OHAMLAB AUDIO] WARNING: pyproject.toml missing'
+        return 1
+    }
+    if [ ! -x "${venv}/bin/python" ]; then
+        "${OHAM_PYTHON}" -m venv "${venv}" || {
+            echo '[OHAMLAB AUDIO] WARNING: could not create audio virtualenv'
+            return 1
+        }
+    fi
+    "${venv}/bin/python" -m pip install --upgrade pip || {
+        echo '[OHAMLAB AUDIO] WARNING: pip upgrade failed'
+    }
+    "${venv}/bin/python" -m pip install -e "${repo}[tts,asr,studio]" || {
+        echo '[OHAMLAB AUDIO] WARNING: VoiceStudio dependencies failed'
+        return 1
+    }
+    touch "${venv}/.ohamlab-audio-ready"
+    fi
+    [ -x "${cli}" ] || {
+        echo '[OHAMLAB AUDIO] WARNING: ohamlab-voice CLI missing'
+        return 1
+    }
+    if [ -n "${AUDIO_PID}" ] && kill -0 "${AUDIO_PID}" 2>/dev/null; then
+        echo "[OHAMLAB AUDIO] VoiceStudio already running."
+        return 0
+    fi
+    export GRADIO_SERVER_NAME="${OHAMLAB_AUDIO_HOST}"
+    export GRADIO_SERVER_PORT="${OHAMLAB_AUDIO_PORT}"
+    export GRADIO_ANALYTICS_ENABLED="False"
+    echo "[OHAMLAB AUDIO] Starting studio on ${OHAMLAB_AUDIO_HOST}:${OHAMLAB_AUDIO_PORT}"
+    echo "[OHAMLAB AUDIO] Log: ${log}"
+    "${cli}" studio \
+        --model "${OHAMLAB_AUDIO_MODEL}" \
+        --device cpu \
+        >"${log}" 2>&1 &
+    AUDIO_PID=$!
+    trap 'kill -TERM "$AUDIO_PID" 2>/dev/null || true; wait "$AUDIO_PID" 2>/dev/null || true; exit 0' TERM INT
+    sleep 5
+    if kill -0 "${AUDIO_PID}" 2>/dev/null; then
+        echo "[OHAMLAB AUDIO] VoiceStudio process started (PID ${AUDIO_PID})"
+        wait "$AUDIO_PID"
+    else
+        echo '[OHAMLAB AUDIO] WARNING: VoiceStudio exited; check its log'
+        AUDIO_PID=""
+        return 1
+    fi
+}
+# ============================================================
+# VERIFY SEARCH AND AGENT LAB
+# ============================================================
 echo
 echo "[OHAMLAB] Verifying local Search and Agent Lab..."
-
-if [ ! -x "${OHAM_PYTHON}" ]; then
-    echo "[OHAMLAB] ERROR: Python environment not found: ${OHAM_PYTHON}"
-    exit 1
-fi
-
 "${OHAM_PYTHON}" -m pip show ohamlab-agent >/dev/null 2>&1 || {
     echo "[OHAMLAB] ERROR: ohamlab-agent not installed!"
     exit 1
 }
-
 "${OHAM_PYTHON}" -m pip show ohamlab-agent-lab >/dev/null 2>&1 || {
     echo "[OHAMLAB] ERROR: ohamlab-agent-lab not installed!"
     exit 1
 }
-
 echo "[OHAMLAB] PASS: Search package installed"
 echo "[OHAMLAB] PASS: Agent Lab package installed"
-
-# ------------------------------------------------------------
-# 5. Inspect Agent Lab Python entry points
-# ------------------------------------------------------------
-
+# ============================================================
+# INSPECT AGENT LAB
+# ============================================================
 echo
 echo "[OHAMLAB] Inspecting Agent Lab installation..."
-
 "${OHAM_PYTHON}" - <<'PY'
 from importlib.metadata import distribution
-
 dist = distribution("ohamlab-agent-lab")
-
 print("[OHAMLAB] Agent Lab version:", dist.version)
-
 top_level = dist.read_text("top_level.txt")
-
 print("[OHAMLAB] Python modules:")
 print(top_level or "No top_level.txt available")
-
 print("[OHAMLAB] Registered executable entry points:")
-
 for entry in dist.entry_points:
     if entry.group == "console_scripts":
         print(f"  {entry.name} = {entry.value}")
-
 print("[OHAMLAB] Agent Lab package inspection complete.")
 PY
-
-# ------------------------------------------------------------
-# 6. Verify Python dependencies
-# ------------------------------------------------------------
-
+# ============================================================
+# VERIFY PYTHON DEPENDENCIES
+# ============================================================
 echo
 echo "[OHAMLAB] Checking Python dependencies..."
-
-if "${OHAM_PYTHON}" -m pip check; then
-    echo "[OHAMLAB] PASS: Python dependencies verified"
-else
-    echo "[OHAMLAB] WARNING: Python dependency check reported issues; continuing startup"
-fi
-
-# ------------------------------------------------------------
-# 7. Verify OhamLab CLI
-# ------------------------------------------------------------
-
+"${OHAM_PYTHON}" -m pip check
+echo "[OHAMLAB] PASS: Python dependencies verified"
+# ============================================================
+# VERIFY OHAMLAB CLI
+# ============================================================
 if command -v ohamlab >/dev/null 2>&1; then
     echo "[OHAMLAB] PASS: OhamLab CLI available"
     command -v ohamlab
 else
     echo "[OHAMLAB] WARNING: OhamLab CLI unavailable"
 fi
-
-
-
 # ============================================================
-# OHAMLAB BRANDING DIAGNOSTICS
-# Runs automatically before Harness starts
-# Read-only: does not change plugin configuration
+# CONFIGURE DSH PROVIDERS
 # ============================================================
-
-diagnose_ohamlab_branding() (
-    set +e
-    set +u
-    set +o pipefail
-
-    echo
-    echo "=========================================================="
-    echo "[BRAND DEBUG] STARTING OHAMLAB BRANDING DIAGNOSTICS"
-    echo "=========================================================="
-
-    BRAND_DIR="/app/ohamlab/plugins/harness-brand"
-    PROFILE_DIR="${DSH_HOME:-/data/dsh}/profiles/web"
-    APP_DIR="${DSH_APP_DIR:-/app/ohamlab-harness/app}"
-
-    echo
-    echo "[BRAND DEBUG] 1. IMPORTANT PATHS"
-    echo "DSH_HOME=${DSH_HOME:-unset}"
-    echo "OHAMLAB_HARNESS_HOME=${OHAMLAB_HARNESS_HOME:-unset}"
-    echo "DSH_APP_DIR=${APP_DIR}"
-    echo "BRAND_DIR=${BRAND_DIR}"
-    echo "PROFILE_DIR=${PROFILE_DIR}"
-
-    echo
-    echo "[BRAND DEBUG] 2. BRAND SOURCE"
-
-    if [ -f "${BRAND_DIR}/package.json" ]; then
-        echo "[BRAND DEBUG] PASS: Branding package exists"
-        ls -la "${BRAND_DIR}"
-    else
-        echo "[BRAND DEBUG] FAIL: Branding source missing"
-    fi
-
-    echo
-    echo "[BRAND DEBUG] 3. BRAND PACKAGE METADATA"
-
-    if [ -f "${BRAND_DIR}/package.json" ]; then
-        BRAND_PACKAGE="${BRAND_DIR}/package.json" node <<'NODE'
-const fs = require("fs");
-const p = JSON.parse(fs.readFileSync(process.env.BRAND_PACKAGE, "utf8"));
-
-console.log(JSON.stringify({
-    name: p.name,
-    version: p.version,
-    type: p.type,
-    main: p.main,
-    exports: p.exports,
-    dsh: p.dsh,
-    scripts: p.scripts
-}, null, 2));
-NODE
-    fi
-
-    echo
-    echo "[BRAND DEBUG] 4. COMPILED BRAND ARTIFACTS"
-
-    for file in \
-        "${BRAND_DIR}/lib/index.js" \
-        "${BRAND_DIR}/lib/client.js"; do
-
-        if [ -s "${file}" ]; then
-            echo "[BRAND DEBUG] PASS: ${file}"
-            ls -lh "${file}"
-        else
-            echo "[BRAND DEBUG] FAIL: Missing or empty ${file}"
-        fi
-    done
-
-    echo
-    echo "[BRAND DEBUG] 5. PROFILE PACKAGE"
-
-    if [ -f "${PROFILE_DIR}/package.json" ]; then
-        PROFILE_PACKAGE="${PROFILE_DIR}/package.json" node <<'NODE'
-const fs = require("fs");
-const p = JSON.parse(fs.readFileSync(process.env.PROFILE_PACKAGE, "utf8"));
-
-console.log("Profile name:", p.name);
-console.log("Dependencies:", JSON.stringify(p.dependencies, null, 2));
-console.log("Bundles:", JSON.stringify(p.dsh?.profile?.bundles, null, 2));
-
-for (const name of ["@ohamlab/harness-brand"]) {
-    console.log(name, {
-        installed: Boolean(p.dependencies?.[name]),
-        bundle: Boolean(p.dsh?.profile?.bundles?.includes(name))
-    });
-}
-NODE
-    else
-        echo "[BRAND DEBUG] FAIL: Web profile package.json missing"
-    fi
-
-    echo
-    echo "[BRAND DEBUG] 6. PROFILE SYMLINKS"
-
-    for plugin in harness-brand; do
-        target="${PROFILE_DIR}/node_modules/@ohamlab/${plugin}"
-
-        if [ -e "${target}/package.json" ]; then
-            echo "[BRAND DEBUG] PASS: ${plugin} resolves"
-            readlink -f "${target}"
-        else
-            echo "[BRAND DEBUG] FAIL: ${plugin} does not resolve"
-            ls -ld "${target}" 2>&1
-        fi
-    done
-
-    echo
-    echo "[BRAND DEBUG] 7. CORDIS CONFIGURATION"
-
-    for file in \
-        "${PROFILE_DIR}/cordis.yml" \
-        "${PROFILE_DIR}/cordis.patch.yml"; do
-
-        echo "[BRAND DEBUG] File: ${file}"
-
-        if [ -f "${file}" ]; then
-            cat "${file}"
-        else
-            echo "[BRAND DEBUG] Missing"
-        fi
-    done
-
-    echo
-    echo "[BRAND DEBUG] 8. CLIENT IMPLEMENTATION FILES"
-
-    if [ -d "${BRAND_DIR}" ]; then
-        find "${BRAND_DIR}" \
-            -maxdepth 4 \
-            -type f \
-            ! -path '*/node_modules/*' \
-            ! -name '*.map' \
-            | sort | head -100
-    fi
-
-    echo
-    echo "[BRAND DEBUG] 9. CLIENT REGISTRATION REFERENCES"
-
-    if [ -d "${BRAND_DIR}" ]; then
-        grep -RInE \
-            --exclude-dir=node_modules \
-            --exclude='*.map' \
-            --exclude='*.min.js' \
-            'register|inject|mount|onMounted|createRoot|document\.|window\.|logo|branding|fish|client' \
-            "${BRAND_DIR}/src" \
-            "${BRAND_DIR}/lib/client.js" \
-            2>/dev/null | cut -c 1-350 | head -100
-    fi
-
-    echo
-    echo "[BRAND DEBUG] 10. DSH CLI PLUGIN LIST"
-
-    if [ -f "${APP_DIR}/apps/cli/src/bin.ts" ]; then
-        (
-            cd "${APP_DIR}" || exit 1
-            pnpm dsh plugin --profile web list
-        ) 2>&1
-    else
-        echo "[BRAND DEBUG] FAIL: DSH CLI not found at ${APP_DIR}"
-    fi
-
-    echo
-    echo "[BRAND DEBUG] 11. DSH EFFECTIVE CONFIGURATION"
-
-    if [ -f "${APP_DIR}/apps/cli/src/bin.ts" ]; then
-        (
-            cd "${APP_DIR}" || exit 1
-            timeout 30s pnpm dsh --profile web --dump-config
-        ) 2>&1 | grep -iE \
-            -C 5 'ohamlab|harness-brand|error|plugin' \
-            | head -120
-    fi
-
-    echo
-    echo "[BRAND DEBUG] 12. ALTERNATE PROFILE LOCATION"
-
-    if [ -d "${DSH_HOME:-/data/dsh}/web/profile" ]; then
-        echo "[BRAND DEBUG] Alternate profile exists:"
-        ls -la "${DSH_HOME:-/data/dsh}/web/profile" | head -30
-    else
-        echo "[BRAND DEBUG] No alternate web/profile directory"
-    fi
-
-    echo
-    echo "[BRAND DEBUG] 13. BRAND CLIENT CONTENT CHECK"
-
-    if [ -s "${BRAND_DIR}/lib/client.js" ]; then
-        echo "[BRAND DEBUG] Client file size:"
-        wc -c "${BRAND_DIR}/lib/client.js"
-
-        echo "[BRAND DEBUG] Client imports:"
-        grep -oE \
-            '(from |import\()["\x27][^"\x27]+' \
-            "${BRAND_DIR}/lib/client.js" \
-            | head -30
-    fi
-
-    echo
-    echo "=========================================================="
-    echo "[BRAND DEBUG] DIAGNOSTICS FINISHED"
-    echo "=========================================================="
-    echo
-)
-
-echo "[OHAMLAB] Running branding diagnostics before launch..."
-diagnose_ohamlab_branding || \
-    echo "[OHAMLAB] WARNING: Branding diagnostics encountered an error"
-
-
-    
 echo
 echo "=========================================================="
-echo "[DSH] Installed web plugins"
+echo "[OHAMLAB] Configuring DSH providers"
 echo "=========================================================="
-
-( cd "${DSH_APP_DIR}" && pnpm dsh plugin --profile web list ) 2>&1 || true
-
-# ==========================================================
-# 3. Configure DSH providers
-# ==========================================================
-
-echo
-echo "=========================================================="
-echo "[3/8] Configuring DSH providers"
-echo "=========================================================="
-
 SETTINGS_FILE="${DSH_HOME}/settings.yaml"
-
 cat > "${SETTINGS_FILE}" <<'EOF'
-
 # ============================================================
-# DeepSeek Harness - LLM Provider Pool
+# OhamLab Harness - LLM Provider Pool
 # ============================================================
-
 llm-pi-ai:
   providers:
-
-    # ========================================================
-    # FREE - NO LOGIN / NO API KEY
-    # ========================================================
     HF:
       displayName: HUGGUN
       api: openai-completions
@@ -699,8 +360,6 @@ llm-pi-ai:
       timeoutMs: 120000
       models:
         - id: Qwen3-9B
-
-
     HFQWEN:
       displayName: HUGGUN-Xing
       api: openai-completions
@@ -709,7 +368,6 @@ llm-pi-ai:
       timeoutMs: 120000
       models:
         - id: Xing
-        
     HFQWENX:
       displayName: HUGGUN-XingXX
       api: openai-completions
@@ -718,7 +376,6 @@ llm-pi-ai:
       timeoutMs: 120000
       models:
         - id: Xing
-        
     kilo:
       displayName: Kilo Free
       api: openai-completions
@@ -733,13 +390,10 @@ llm-pi-ai:
         - id: poolside/laguna-s-2.1:free
         - id: poolside/laguna-xs-2.1:free
         - id: cohere/north-mini-code:free
-        - id: openrouter/free
+
         - id: tencent/hy3:free
         - id: nvidia/nemotron-3.5-lightning:free
         - id: liquid/lfm-2.5-2.6b:free
-
-    
-
     ovh:
       displayName: ALIBABA NEW
       api: openai-completions
@@ -755,13 +409,10 @@ llm-pi-ai:
         - id: qwen3.6-plus
         - id: glm-5.2
         - id: glm-5.3
+
         - id: qwen3.6-flash
         - id: qwen3-vl-plus-2025-09-23
         - id: Mistral-7B-Instruct-v0.3
-
-  
-   
-
     nvidia:
       displayName: NVIDIA NIM
       api: openai-completions
@@ -773,36 +424,25 @@ llm-pi-ai:
         - id: nvidia/nemotron-3.5-super-vl-120b-a12b
         - id: z-ai/glm-5.3
         - id: moonshotai/kimi-k3
-        - id: nvidia/nemotron-3-ultra-550b-a55bopenai/gpt-oss-safeguard-20b
-        - id: meta/muse-glimmer-30b 
-        - id: nvidia/nemotron-3-ultra-550b-a55b  
-        - id: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning  
-        - id: nvidia/nemotron-3-super-120b-a12b  
+        - id: openai/gpt-oss-safeguard-20b
+        - id: meta/muse-glimmer-30b
+        - id: nvidia/nemotron-3-ultra-550b-a55b
+        - id: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+        - id: nvidia/nemotron-3-super-120b-a12b
         - id: qwen/qwen3.8-27b
-      
-     
-        
-
-
-
     dashscope_extra:
-      displayName: Alibaba Extra
+      displayName: Alibaba Extra Models
       api: openai-completions
       baseURL: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
       apiKeyEnv: DASHSCOPE_API_KEY
       timeoutMs: 120000
       models:
         - id: qwen3-vl-32b-thinking
+
         - id: qwen3.8-max
         - id: qwen3-max
         - id: glm-5.1
         - id: qwen3.7-plus
-
-    
-    # ========================================================
-    # OPENROUTER
-    # ========================================================
-
     openrouter:
       displayName: OpenRouter - Dynamic Free
       api: openai-completions
@@ -810,18 +450,9 @@ llm-pi-ai:
       apiKeyEnv: OPENROUTER_API_KEY
       timeoutMs: 120000
       models:
-        - id: openrouter/free
+
         - id: nvidia/nemotron-3-ultra-550b-a55b:free
         - id: qwen/qwen3-coder:free
-
- 
-
-
-
-    # ========================================================
-    # HUGGING FACE
-    # ========================================================
-
     huggingface:
       displayName: Hugging Face Router
       api: openai-completions
@@ -831,11 +462,6 @@ llm-pi-ai:
       models:
         - id: openai/gpt-oss-120b
         - id: openai/gpt-oss-20b
-
-    # ========================================================
-    # QWEN
-    # ========================================================
-
     dashscope_qwen_flash_next:
       displayName: Qwen 3.8 Flash Next
       api: openai-completions
@@ -844,7 +470,6 @@ llm-pi-ai:
       timeoutMs: 120000
       models:
         - id: Qwen/Qwen3.8-Flash-Next
-
     qwen:
       displayName: Qwen 3.8 Flash Next
       api: openai-completions
@@ -853,23 +478,6 @@ llm-pi-ai:
       timeoutMs: 120000
       models:
         - id: Qwen/Qwen3.8-Flash-Next
-
-    # ========================================================
-    # AGNES
-    # ========================================================
-
-   
-
-    # ========================================================
-    # NVIDIA
-    # ========================================================
-
-    
-
-    # ========================================================
-    # LOCAL LLAMA.CPP
-    # ========================================================
-
     llama:
       displayName: LFM2.5 Local
       api: openai-completions
@@ -878,123 +486,128 @@ llm-pi-ai:
       timeoutMs: 120000
       models:
         - id: LFM2.5
-
-
 agent-default-model:
   provider: HF
   model: Qwen3-9B
-
 EOF
-
 chmod 600 "${SETTINGS_FILE}"
-
 echo "[DSH] Settings file: ${SETTINGS_FILE}"
 echo "[DSH] Provider pool configured"
-echo "[DSH] Default model: groq / openai/gpt-oss-120b"
-
+echo "[DSH] Default model: HF / Qwen3-9B"
 # ============================================================
 # VERIFY NGINX
 # ============================================================
-
 echo "[OHAMLAB] Checking Nginx..."
-
 nginx -t
-
-# ============================================================
-# START NGINX
-# ============================================================
-
-echo "[OHAMLAB] Starting Nginx..."
-
-nginx
-
 # ============================================================
 # START HOURLY BACKUP WORKER
 # ============================================================
-
 hourly_backup &
 BACKUP_PID=$!
-
 # ============================================================
 # GRACEFUL SHUTDOWN
 # ============================================================
-
 shutdown() {
-
     echo "[OHAMLAB] Shutdown requested."
-
     trap - TERM INT
-
-    # Stop backup worker
     if [ -n "${BACKUP_PID}" ]; then
-
         kill "${BACKUP_PID}" 2>/dev/null || true
-
         wait "${BACKUP_PID}" 2>/dev/null || true
-
     fi
-
-    # Stop Harness
+    if [ -n "${AUDIO_PID}" ]; then
+        kill -TERM "${AUDIO_PID}" 2>/dev/null || true
+        wait "${AUDIO_PID}" 2>/dev/null || true
+    fi
     if [ -n "${HARNESS_PID}" ]; then
-
         kill -TERM "${HARNESS_PID}" 2>/dev/null || true
-
         wait "${HARNESS_PID}" 2>/dev/null || true
-
     fi
-
-    # Stop Nginx
     nginx -s quit 2>/dev/null || true
-
-    # Final session backup
-    backup_sessions || \
+    backup_sessions || {
         echo "[OHAMLAB] WARNING: Final backup failed."
-
+    }
     echo "[OHAMLAB] Shutdown complete."
-
-    exit 0
+    exit "${1:-0}"
 }
-
 trap shutdown TERM INT
-
+# ============================================================
+# RUNTIME DIAGNOSTICS
+# ============================================================
+echo "[OHAMLAB DEBUG] DSH_HOME=${DSH_HOME}"
+for profile in "${DSH_HOME}/profiles/web" "${DSH_HOME}/web/profile"; do
+    if [ -d "${profile}" ]; then
+        echo "[OHAMLAB DEBUG] Found profile: ${profile}"
+        ls -la "${profile}"
+    fi
+done
+echo "[OHAMLAB DEBUG] Registered plugins:"
+( cd "${DSH_APP_DIR}"; timeout 30s pnpm dsh plugin --profile web list ) || true
+ls -ld "${DSH_HOME}/sessions" "${SETTINGS_FILE}" || true
 # ============================================================
 # LAUNCH OHAMLAB HARNESS
 # ============================================================
-
 echo "=========================================================="
 echo "[OHAMLAB] Launching OhamLab Harness..."
 echo "=========================================================="
-echo "[OHAMLAB] Launching OhamLab Harness..."
-
-# Paste the full diagnostic block here
-
-ohamlab-harness start &
-
+log_stage "Launching Harness"
+# Use the full public Hugging Face hostname for browser trust.
+TRUSTED_HOST="${DSH_TRUSTED_HOST:-${SPACE_HOST:-rahul7star-harnesss.hf.space}}"
+if [[ "${TRUSTED_HOST}" != *.* ]]; then
+    TRUSTED_HOST="${TRUSTED_HOST}.hf.space"
+fi
+export DSH_TRUSTED_HOST="${TRUSTED_HOST}"
+echo "[OHAMLAB] Trusted host: ${DSH_TRUSTED_HOST}"
+(
+    cd "${DSH_APP_DIR}"
+    exec pnpm dsh web \
+        --host "${DSH_HOST}" \
+        --port "${DSH_PORT}" \
+        --no-open \
+        --trusted-host "${DSH_TRUSTED_HOST}"
+) &
 HARNESS_PID=$!
 
-# Wait for Harness
+echo "[OHAMLAB] Waiting for Harness backend..."
+HARNESS_READY=0
+for attempt in $(seq 1 90); do
+    if ! kill -0 "${HARNESS_PID}" 2>/dev/null; then
+        echo "[OHAMLAB] ERROR: Harness exited during startup"
+        break
+    fi
+    if curl -fsS --max-time 2 "http://${DSH_HOST}:${DSH_PORT}/" >/dev/null 2>&1; then
+        HARNESS_READY=1
+        break
+    fi
+    sleep 1
+done
+if [ "${HARNESS_READY}" != 1 ]; then
+    echo "[OHAMLAB] ERROR: Harness backend failed readiness check"
+    shutdown 1
+fi
+echo "[OHAMLAB] Harness HTTP backend is ready"
+echo "[OHAMLAB] Starting Nginx..."
+nginx
+# Run optional audio setup separately; exec the service in the worker so
+# the parent can terminate it using the tracked PID.
+if [ "${OHAMLAB_ENABLE_AUDIO:-0}" = 1 ]; then
+    ( install_ohamlab_audio ) &
+    AUDIO_PID=$!
+fi
 set +e
-
 wait "${HARNESS_PID}"
-
 HARNESS_STATUS=$?
-
 set -e
-
 # ============================================================
 # CLEANUP AFTER HARNESS EXIT
 # ============================================================
-
 echo "[OHAMLAB] Harness stopped."
-
-# Stop hourly backup worker
+nginx -s quit 2>/dev/null || true
+if [ -n "${AUDIO_PID}" ]; then
+    kill -TERM "${AUDIO_PID}" 2>/dev/null || true
+    wait "${AUDIO_PID}" 2>/dev/null || true
+fi
 kill "${BACKUP_PID}" 2>/dev/null || true
-
 wait "${BACKUP_PID}" 2>/dev/null || true
-
-# Final backup
 backup_sessions || true
-
 echo "[OHAMLAB] Harness exit status: ${HARNESS_STATUS}"
-
 exit "${HARNESS_STATUS}"
