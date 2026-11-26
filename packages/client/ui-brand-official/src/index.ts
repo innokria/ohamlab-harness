@@ -1,1 +1,1 @@
-export function apply(_ctx: unknown): void {}
+export function apply(_ctx?: unknown): void {}
