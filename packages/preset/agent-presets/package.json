@@ -1,0 +1,73 @@
+{
+  "name": "@ohamlab/dsh-agent-presets",
+  "description": "Per-session agent composition from preset cordis.yml files for the DeepSeek Harness",
+  "version": "0.1.1-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/innokria/ohamlab-harness.git",
+    "directory": "packages/preset/agent-presets"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./types": {
+      "types": "./lib/types/types.d.ts",
+      "default": "./lib/types/types.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/invariant.js",
+    "lib/types/**/*.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@ohamlab/cordis-plugin-include": "workspace:^",
+    "@ohamlab/cordis-plugin-loader": "workspace:^",
+    "@ohamlab/dsh-agent": "workspace:^",
+    "@ohamlab/dsh-atomic-write": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-home-paths": "workspace:^",
+    "@ohamlab/dsh-scope": "workspace:^",
+    "@ohamlab/dsh-session": "workspace:^",
+    "@ohamlab/dsh-settings": "workspace:^",
+    "@ohamlab/dsh-system-prompt": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "@ohamlab/schemastery": "workspace:^"
+  },
+  "devDependencies": {
+    "@ohamlab/cordis-plugin-include": "workspace:^",
+    "@ohamlab/cordis-plugin-loader": "workspace:^",
+    "@ohamlab/dsh-agent": "workspace:^",
+    "@ohamlab/dsh-agent-loop": "workspace:^",
+    "@ohamlab/dsh-atomic-write": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-llm": "workspace:^",
+    "@ohamlab/dsh-home-paths": "workspace:^",
+    "@ohamlab/dsh-scope": "workspace:^",
+    "@ohamlab/dsh-session": "workspace:^",
+    "@ohamlab/dsh-settings": "workspace:^",
+    "@ohamlab/dsh-settings-file": "workspace:^",
+    "@ohamlab/dsh-system-prompt": "workspace:^",
+    "@ohamlab/dsh-tools": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  }
+}

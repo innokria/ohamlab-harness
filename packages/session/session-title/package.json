@@ -1,0 +1,65 @@
+{
+  "name": "@ohamlab/dsh-session-title",
+  "description": "Log-backed session title service and provider registry for the DeepSeek Harness",
+  "version": "0.1.1-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/innokria/ohamlab-harness.git",
+    "directory": "packages/session/session-title"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./types": {
+      "types": "./lib/types/types.d.ts",
+      "default": "./lib/types/types.js"
+    },
+    "./client": {
+      "types": "./lib/types/client.d.ts",
+      "default": "./lib/types/client.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/invariant.js",
+    "lib/types/**/*.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@ohamlab/dsh-brand": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-llm": "workspace:^",
+    "@ohamlab/dsh-session": "workspace:^",
+    "@ohamlab/dsh-session-projection": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  },
+  "dependencies": {
+    "@ohamlab/schemastery": "workspace:^",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@ohamlab/dsh-brand": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-llm": "workspace:^",
+    "@ohamlab/dsh-session": "workspace:^",
+    "@ohamlab/dsh-session-persistence-jsonl": "workspace:^",
+    "@ohamlab/dsh-session-persistence-sqlite": "workspace:^",
+    "@ohamlab/dsh-session-projection": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  }
+}

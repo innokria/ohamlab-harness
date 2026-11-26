@@ -1,0 +1,55 @@
+{
+  "name": "@ohamlab/dsh-subprocess-local",
+  "description": "Local-subprocess implementation of the DeepSeek Harness subprocess seam",
+  "version": "0.1.1-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/innokria/ohamlab-harness.git",
+    "directory": "packages/subprocess/subprocess-local"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/invariant.js",
+    "scripts/ensure-spawn-helper.mjs",
+    "lib/types/**/*.d.ts"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/ensure-spawn-helper.mjs"
+  },
+  "license": "MIT",
+  "peerDependencies": {
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-subprocess": "workspace:^",
+    "@ohamlab/dsh-timeout": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  },
+  "dependencies": {
+    "koffi": "^3.1.0",
+    "node-pty": "1.2.0-beta.15"
+  },
+  "devDependencies": {
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-loader-smoke": "workspace:^",
+    "@ohamlab/dsh-subprocess": "workspace:^",
+    "@ohamlab/dsh-timeout": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  }
+}

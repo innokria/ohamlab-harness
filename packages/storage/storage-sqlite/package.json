@@ -1,0 +1,47 @@
+{
+  "name": "@ohamlab/dsh-storage-sqlite",
+  "description": "SQLite storage backend (kv facet) for the DeepSeek Harness storage hub",
+  "version": "0.1.1-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/innokria/ohamlab-harness.git",
+    "directory": "packages/storage/storage-sqlite"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/invariant.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-storage": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  },
+  "dependencies": {
+    "@ohamlab/schemastery": "workspace:^"
+  },
+  "devDependencies": {
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-storage": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  }
+}

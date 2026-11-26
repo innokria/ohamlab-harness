@@ -1,0 +1,76 @@
+{
+  "name": "@ohamlab/dsh-acp-demo",
+  "description": "ACP automation server app: agent spine + JSONL persistence + ACP transport, with a JSON-RPC stdio bin",
+  "version": "0.1.1-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/innokria/ohamlab-harness.git",
+    "directory": "packages/examples/acp-demo"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "bin": {
+    "dsh-acp-demo": "lib/bin.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./bin": {
+      "types": "./lib/types/bin.d.ts",
+      "default": "./lib/bin.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/invariant.js",
+    "lib/bin.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@ohamlab/cordis-plugin-include": "workspace:^",
+    "@ohamlab/cordis-plugin-loader": "workspace:^",
+    "@ohamlab/dsh-acp": "workspace:^",
+    "@ohamlab/dsh-agent-spine-demo": "workspace:^",
+    "@ohamlab/dsh-app-boot": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-session-checkpoint-policy": "workspace:^",
+    "@ohamlab/dsh-session-persistence-jsonl": "workspace:^",
+    "@ohamlab/dsh-session-query": "workspace:^",
+    "@ohamlab/dsh-session-query-sqlite": "workspace:^",
+    "@ohamlab/dsh-tools": "workspace:^",
+    "@ohamlab/dsh-agent-instructions": "workspace:^",
+    "@ohamlab/cordis": "workspace:^",
+    "@ohamlab/schemastery": "workspace:^"
+  },
+  "devDependencies": {
+    "@ohamlab/cordis-plugin-include": "workspace:^",
+    "@ohamlab/cordis-plugin-loader": "workspace:^",
+    "@ohamlab/dsh-acp": "workspace:^",
+    "@ohamlab/dsh-agent": "workspace:^",
+    "@ohamlab/dsh-agent-spine-demo": "workspace:^",
+    "@ohamlab/dsh-app-boot": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-session-checkpoint-policy": "workspace:^",
+    "@ohamlab/dsh-session-persistence-jsonl": "workspace:^",
+    "@ohamlab/dsh-session-query": "workspace:^",
+    "@ohamlab/dsh-session-query-sqlite": "workspace:^",
+    "@ohamlab/dsh-system-prompt": "workspace:^",
+    "@ohamlab/dsh-tools": "workspace:^",
+    "@ohamlab/dsh-agent-instructions": "workspace:^",
+    "@ohamlab/cordis": "workspace:^",
+    "@ohamlab/schemastery": "workspace:^"
+  }
+}

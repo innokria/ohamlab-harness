@@ -1,0 +1,80 @@
+{
+  "name": "@ohamlab/dsh-message-feedback",
+  "description": "Lifecycle-bound per-message rating and note sidecar for the DeepSeek Harness",
+  "version": "0.1.1-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/innokria/ohamlab-harness.git",
+    "directory": "packages/feedback/message-feedback"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./types": {
+      "types": "./lib/types/types.d.ts",
+      "default": "./lib/types/types.js"
+    },
+    "./typert": {
+      "types": "./lib/typert.host.d.ts",
+      "default": "./lib/typert.host.js"
+    },
+    "./remote": {
+      "types": "./lib/typert.remote-client.d.ts",
+      "default": "./lib/typert.remote-client.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/invariant.js",
+    "lib/types/**/*.js",
+    "lib/types/**/*.d.ts",
+    "lib/typert.host.js",
+    "lib/typert.host.d.ts",
+    "lib/typert.remote-client.js",
+    "lib/typert.remote-client.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@ohamlab/dsh-brand": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-llm": "workspace:^",
+    "@ohamlab/dsh-session": "workspace:^",
+    "@ohamlab/dsh-session-persistence": "workspace:^",
+    "@ohamlab/dsh-storage-domain": "workspace:^",
+    "@ohamlab/dsh-typert-protocol": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  },
+  "dependencies": {
+    "@ohamlab/schemastery": "workspace:^",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@ohamlab/cordis-plugin-include": "workspace:^",
+    "@ohamlab/cordis-plugin-loader": "workspace:^",
+    "@ohamlab/dsh-brand": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-llm": "workspace:^",
+    "@ohamlab/dsh-session": "workspace:^",
+    "@ohamlab/dsh-session-persistence": "workspace:^",
+    "@ohamlab/dsh-session-persistence-jsonl": "workspace:^",
+    "@ohamlab/dsh-storage": "workspace:^",
+    "@ohamlab/dsh-storage-domain": "workspace:^",
+    "@ohamlab/dsh-storage-json": "workspace:^",
+    "@ohamlab/dsh-typert-protocol": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  }
+}

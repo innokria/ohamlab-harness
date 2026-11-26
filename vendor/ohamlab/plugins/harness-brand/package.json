@@ -1,0 +1,36 @@
+{
+  "name": "@ohamlab/harness-brand",
+  "version": "2.0.0",
+  "description": "OhamLab Harness branding plugin: custom brand name and floating fish overlay",
+  "type": "module",
+  "main": "lib/index.ts",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.ts"
+    },
+    "./client": {
+      "types": "./lib/types/client/index.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "inject": [
+        "@ohamlab/dsh-client-runtime",
+        "@ohamlab/dsh-client-ui-layout",
+        "@ohamlab/dsh-client-ui-sidebar"
+      ],
+      "platform": "web"
+    }
+  },
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.25.12"
+  }
+}

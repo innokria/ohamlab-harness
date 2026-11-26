@@ -1,0 +1,106 @@
+{
+  "name": "@ohamlab/dsh-subagent",
+  "description": "Abstract subagent seam (ctx.subagents): named-provider registry for delegating to child agents",
+  "version": "0.1.1-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/innokria/ohamlab-harness.git",
+    "directory": "packages/subagent/subagent"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./client": {
+      "types": "./lib/types/client.d.ts",
+      "default": "./lib/types/client.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/invariant.js",
+    "lib/types/**/*.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "peerDependencies": {
+    "@ohamlab/dsh-agent": "workspace:^",
+    "@ohamlab/dsh-agent-presets": "workspace:^",
+    "@ohamlab/dsh-brand": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-llm": "workspace:^",
+    "@ohamlab/dsh-sandbox": "workspace:^",
+    "@ohamlab/dsh-sandbox-policy": "workspace:^",
+    "@ohamlab/dsh-scope": "workspace:^",
+    "@ohamlab/dsh-session": "workspace:^",
+    "@ohamlab/dsh-session-persistence": "workspace:^",
+    "@ohamlab/dsh-session-projection": "workspace:^",
+    "@ohamlab/dsh-session-projection-cache": "workspace:^",
+    "@ohamlab/dsh-jobs": "workspace:^",
+    "@ohamlab/dsh-tools": "workspace:^",
+    "@ohamlab/dsh-user-approval": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "@ohamlab/dsh-agent-presets": {
+      "optional": true
+    },
+    "@ohamlab/dsh-sandbox": {
+      "optional": true
+    },
+    "@ohamlab/dsh-sandbox-policy": {
+      "optional": true
+    },
+    "@ohamlab/dsh-session-persistence": {
+      "optional": true
+    },
+    "@ohamlab/dsh-session-projection": {
+      "optional": true
+    },
+    "@ohamlab/dsh-session-projection-cache": {
+      "optional": true
+    },
+    "@ohamlab/dsh-jobs": {
+      "optional": true
+    },
+    "@ohamlab/dsh-user-approval": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@ohamlab/dsh-agent": "workspace:^",
+    "@ohamlab/dsh-agent-presets": "workspace:^",
+    "@ohamlab/dsh-brand": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-llm": "workspace:^",
+    "@ohamlab/dsh-sandbox": "workspace:^",
+    "@ohamlab/dsh-sandbox-policy": "workspace:^",
+    "@ohamlab/dsh-scope": "workspace:^",
+    "@ohamlab/dsh-session": "workspace:^",
+    "@ohamlab/dsh-session-persistence": "workspace:^",
+    "@ohamlab/dsh-session-projection": "workspace:^",
+    "@ohamlab/dsh-session-projection-cache": "workspace:^",
+    "@ohamlab/dsh-storage": "workspace:^",
+    "@ohamlab/dsh-storage-domain": "workspace:^",
+    "@ohamlab/dsh-jobs": "workspace:^",
+    "@ohamlab/dsh-tools": "workspace:^",
+    "@ohamlab/dsh-user-approval": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  }
+}

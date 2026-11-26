@@ -1,0 +1,62 @@
+{
+  "name": "@ohamlab/dsh-sdk-jsonrpc-server",
+  "description": "Stdio JSON-RPC server plugin for out-of-process DeepSeek Harness SDK clients",
+  "version": "0.1.1-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/innokria/ohamlab-harness.git",
+    "directory": "packages/sdk/server"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/invariant.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@ohamlab/schemastery": "workspace:^"
+  },
+  "peerDependencies": {
+    "@ohamlab/dsh-agent": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-llm": "workspace:^",
+    "@ohamlab/dsh-llm-deepseek": "workspace:^",
+    "@ohamlab/dsh-scope": "workspace:^",
+    "@ohamlab/dsh-sdk-protocol": "workspace:^",
+    "@ohamlab/dsh-session": "workspace:^",
+    "@ohamlab/dsh-subagent": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  },
+  "devDependencies": {
+    "@ohamlab/cordis-plugin-loader": "workspace:^",
+    "@ohamlab/dsh-agent": "workspace:^",
+    "@ohamlab/dsh-agent-spine-demo": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-llm": "workspace:^",
+    "@ohamlab/dsh-llm-deepseek": "workspace:^",
+    "@ohamlab/dsh-scope": "workspace:^",
+    "@ohamlab/dsh-sdk-protocol": "workspace:^",
+    "@ohamlab/dsh-session": "workspace:^",
+    "@ohamlab/dsh-session-persistence-jsonl": "workspace:^",
+    "@ohamlab/dsh-subagent": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  }
+}

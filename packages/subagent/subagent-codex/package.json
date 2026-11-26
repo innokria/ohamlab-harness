@@ -1,0 +1,67 @@
+{
+  "name": "@ohamlab/dsh-subagent-codex",
+  "description": "One-shot Codex subagent provider over the official app-server protocol",
+  "version": "0.1.1-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/innokria/ohamlab-harness.git",
+    "directory": "packages/subagent/subagent-codex"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/invariant.js",
+    "cordis.patch.yml",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-llm": "workspace:^",
+    "@ohamlab/dsh-session": "workspace:^",
+    "@ohamlab/dsh-subagent": "workspace:^",
+    "@ohamlab/dsh-subprocess": "workspace:^",
+    "@ohamlab/dsh-timeout": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  },
+  "dependencies": {
+    "@ohamlab/dsh-sdk-protocol": "workspace:^",
+    "@ohamlab/schemastery": "workspace:^",
+    "@openai/codex": "0.147.0"
+  },
+  "devDependencies": {
+    "@ohamlab/cordis-plugin-loader": "workspace:^",
+    "@ohamlab/dsh-agent": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-llm": "workspace:^",
+    "@ohamlab/dsh-loader-smoke": "workspace:^",
+    "@ohamlab/dsh-session": "workspace:^",
+    "@ohamlab/dsh-subagent": "workspace:^",
+    "@ohamlab/dsh-subprocess": "workspace:^",
+    "@ohamlab/dsh-subprocess-local": "workspace:^",
+    "@ohamlab/dsh-timeout": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  }
+}

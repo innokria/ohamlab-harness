@@ -1,0 +1,61 @@
+{
+  "name": "@ohamlab/dsh-experimental-tool-agent-team",
+  "description": "Scoped model-facing Agent Teams tools over ctx.agentTeams",
+  "version": "0.1.1-rc.2",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/innokria/ohamlab-harness.git",
+    "directory": "packages/experimental/tool-agent-team"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/invariant.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@ohamlab/schemastery": "workspace:^"
+  },
+  "peerDependencies": {
+    "@ohamlab/dsh-agent": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-session": "workspace:^",
+    "@ohamlab/dsh-system-prompt": "workspace:^",
+    "@ohamlab/dsh-experimental-agent-team": "workspace:^",
+    "@ohamlab/dsh-tools": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  },
+  "devDependencies": {
+    "@ohamlab/dsh-agent": "workspace:^",
+    "@ohamlab/dsh-agent-loop": "workspace:^",
+    "@ohamlab/dsh-agent-loop-testkit": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-session": "workspace:^",
+    "@ohamlab/dsh-session-persistence-jsonl": "workspace:^",
+    "@ohamlab/dsh-scope": "workspace:^",
+    "@ohamlab/dsh-subagent": "workspace:^",
+    "@ohamlab/dsh-subagent-fork-in-process": "workspace:^",
+    "@ohamlab/dsh-subagent-spawn-in-process": "workspace:^",
+    "@ohamlab/dsh-tool-subagent-control": "workspace:^",
+    "@ohamlab/dsh-system-prompt": "workspace:^",
+    "@ohamlab/dsh-experimental-agent-team": "workspace:^",
+    "@ohamlab/dsh-tools": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  }
+}

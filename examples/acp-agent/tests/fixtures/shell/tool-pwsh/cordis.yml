@@ -1,0 +1,27 @@
+# Minimal tool-pwsh composition: real app boot path, real pwsh executor, real
+# foreground + background tool calls; driven by the package's loader.spec.ts.
+- id: system-prompt
+  name: '@ohamlab/dsh-system-prompt'
+
+- id: tools
+  name: '@ohamlab/dsh-tools'
+
+- id: subprocess
+  name: '@ohamlab/dsh-subprocess-local'
+
+- id: bash
+  name: '@ohamlab/dsh-pwsh-local'
+  config:
+    graceMs: 200
+
+- id: shell-env
+  name: '@ohamlab/dsh-shell-env'
+
+- id: tasks
+  name: '@ohamlab/dsh-jobs-local'
+
+- id: tool-jobs
+  name: '@ohamlab/dsh-tool-jobs'
+
+- id: tool-pwsh
+  name: '@ohamlab/dsh-tool-pwsh'

@@ -1,0 +1,116 @@
+{
+  "name": "@ohamlab/dsh-client-ui-conversation",
+  "description": "Conversation domain: skeleton, ordered chat flow, composer with the Host-backed busy-Enter preference, and details host",
+  "version": "0.1.1-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/innokria/ohamlab-harness.git",
+    "directory": "packages/client/ui-conversation"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./client": {
+      "types": "./lib/types/client/index.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "inject": [
+        "@ohamlab/dsh-client-connection",
+        "@ohamlab/dsh-client-locale",
+        "@ohamlab/dsh-client-runtime",
+        "@ohamlab/dsh-client-ui-settings",
+        "@ohamlab/dsh-api-remotes",
+        "@ohamlab/dsh-client-ui-layout"
+      ],
+      "platform": "web"
+    }
+  },
+  "scripts": {
+    "bundle": "tsdown",
+    "watch": "tsdown --watch"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "clsx": "^2.0.0",
+    "@ohamlab/schemastery": "workspace:^"
+  },
+  "peerDependencies": {
+    "@ohamlab/cordis": "workspace:^",
+    "@ohamlab/dsh-agent": "workspace:^",
+    "@ohamlab/dsh-api-remotes": "workspace:^",
+    "@ohamlab/dsh-attachment": "workspace:^",
+    "@ohamlab/dsh-brand": "workspace:^",
+    "@ohamlab/dsh-client-connection": "workspace:^",
+    "@ohamlab/dsh-client-locale": "workspace:^",
+    "@ohamlab/dsh-client-runtime": "workspace:^",
+    "@ohamlab/dsh-client-ui-settings": "workspace:^",
+    "@ohamlab/dsh-client-ui-input-trigger": "workspace:^",
+    "@ohamlab/dsh-commands": "workspace:^",
+    "@ohamlab/dsh-compaction": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-llm-retry": "workspace:^",
+    "@ohamlab/dsh-session-stats": "workspace:^",
+    "@ohamlab/dsh-token-meter": "workspace:^",
+    "@ohamlab/dsh-tools": "workspace:^",
+    "@ohamlab/dsh-settings": "workspace:^",
+    "@ohamlab/dsh-client-ui-layout": "workspace:^",
+    "@ohamlab/dsh-goal": "workspace:^",
+    "@ohamlab/dsh-permission-presets": "workspace:^",
+    "@ohamlab/dsh-plan-mode": "workspace:^",
+    "@ohamlab/dsh-tool-todo": "workspace:^"
+  },
+  "devDependencies": {
+    "@ohamlab/cordis": "workspace:^",
+    "@ohamlab/dsh-agent": "workspace:^",
+    "@ohamlab/dsh-api-remotes": "workspace:^",
+    "@ohamlab/dsh-attachment": "workspace:^",
+    "@ohamlab/dsh-brand": "workspace:^",
+    "@ohamlab/dsh-client-connection": "workspace:^",
+    "@ohamlab/dsh-client-locale": "workspace:^",
+    "@ohamlab/dsh-client-runtime": "workspace:^",
+    "@ohamlab/dsh-client-test-runtime": "workspace:^",
+    "@ohamlab/dsh-client-ui-layout": "workspace:^",
+    "@ohamlab/dsh-client-ui-primitives": "workspace:^",
+    "@ohamlab/dsh-client-ui-settings": "workspace:^",
+    "@ohamlab/dsh-client-ui-input-trigger": "workspace:^",
+    "@ohamlab/dsh-client-ui-slots": "workspace:^",
+    "@ohamlab/dsh-commands": "workspace:^",
+    "@ohamlab/dsh-compaction": "workspace:^",
+    "@ohamlab/dsh-goal": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-llm-retry": "workspace:^",
+    "@ohamlab/dsh-permission-presets": "workspace:^",
+    "@ohamlab/dsh-plan-mode": "workspace:^",
+    "@ohamlab/dsh-session-projection": "workspace:^",
+    "@ohamlab/dsh-session-stats": "workspace:^",
+    "@ohamlab/dsh-token-meter": "workspace:^",
+    "@ohamlab/dsh-tool-todo": "workspace:^",
+    "@ohamlab/dsh-tools": "workspace:^",
+    "@types/react": "~18.3.1",
+    "react": "^18.2.0",
+    "@ohamlab/dsh-settings": "workspace:^"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/invariant.js",
+    "lib/client.js",
+    "lib/types/**/*.d.ts"
+  ]
+}

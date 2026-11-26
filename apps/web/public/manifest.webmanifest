@@ -1,0 +1,16 @@
+{
+  "id": "/",
+  "name": "OhamLab Harness",
+  "short_name": "OhamLab",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "name": "@ohamlab/dsh-tool-bash-persistent",
+  "description": "Model-facing owner-scoped persistent Bash tool backed by the Harness PTY service",
+  "version": "0.1.1-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/innokria/ohamlab-harness.git",
+    "directory": "packages/shell/tool-bash-persistent"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/invariant.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@ohamlab/dsh-agent": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-terminal": "workspace:^",
+    "@ohamlab/dsh-timeout": "workspace:^",
+    "@ohamlab/dsh-tools": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  },
+  "dependencies": {
+    "@ohamlab/schemastery": "workspace:^"
+  },
+  "devDependencies": {
+    "@ohamlab/cordis-plugin-include": "workspace:^",
+    "@ohamlab/cordis-plugin-loader": "workspace:^",
+    "@ohamlab/dsh-agent": "workspace:^",
+    "@ohamlab/dsh-invariants": "workspace:^",
+    "@ohamlab/dsh-llm": "workspace:^",
+    "@ohamlab/dsh-terminal": "workspace:^",
+    "@ohamlab/dsh-terminal-bash": "workspace:^",
+    "@ohamlab/dsh-sandbox": "workspace:^",
+    "@ohamlab/dsh-sandbox-policy": "workspace:^",
+    "@ohamlab/dsh-session": "workspace:^",
+    "@ohamlab/dsh-subprocess-local": "workspace:^",
+    "@ohamlab/dsh-system-prompt": "workspace:^",
+    "@ohamlab/dsh-timeout": "workspace:^",
+    "@ohamlab/dsh-tools": "workspace:^",
+    "@ohamlab/cordis": "workspace:^"
+  }
+}
