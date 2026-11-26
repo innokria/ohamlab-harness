@@ -1,4 +1,3 @@
-
 FROM node:22-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -17,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-venv \
     python3-pip \
     tar \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # ------------------------------------------------------------
@@ -31,8 +31,8 @@ ENV PATH="/app/ohamlab-venv/bin:${PATH}" \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     OHAMLAB_HARNESS_HOME=/app/ohamlab-harness \
-    OHAMLAB_HARNESS_TAG=1.0 \
-    OHAMLAB_INTEGRATION_TAG=2.0 \
+    OHAMLAB_HARNESS_TAG=main \
+    OHAMLAB_INTEGRATION_TAG=main \
     DSH_HOME=/data/dsh \
     DSH_HOST=127.0.0.1 \
     DSH_PORT=3080 \
@@ -44,8 +44,8 @@ ENV PATH="/app/ohamlab-venv/bin:${PATH}" \
 # ------------------------------------------------------------
 
 RUN corepack enable \
-    && corepack prepare pnpm@11.7.0 --activate \
-    && pnpm config set dangerouslyAllowAllBuilds true
+    && corepack prepare pnpm@11.7.0 --activate
+
 
 # ------------------------------------------------------------
 # 4. Get current OhamLab repository
@@ -73,12 +73,21 @@ RUN python -m pip install --upgrade pip \
 # Harness and integration sources are fetched by installer.py.
 RUN rm -rf /tmp/ohamlab-source
 
+ENV OHAMLAB_REPO_URL=${OHAMLAB_REPO} \
+    DSH_TELEMETRY_DISABLED=1 \
+    DSH_TELEMETRY_MODE=DISABLED \
+    DSH_TELEMETRY_OTLP_URL="" \
+    OTEL_SDK_DISABLED=true \
+    NODE_OPTIONS="--max-old-space-size=8192"
+
+RUN DSH_HOME=/tmp/ohamlab-build-data ohamlab-harness install --force \
+    && rm -rf /tmp/ohamlab-build-data
+
 # ------------------------------------------------------------
 # 6. Persistent data directories
 # ------------------------------------------------------------
 
 RUN mkdir -p \
-    /data/dsh/sessions \
     /data/dsh/session-backup \
     /data/dsh/plugins \
     /data/dsh/skills \
