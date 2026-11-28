@@ -8,18 +8,18 @@ export const WELCOME_NOTICE_ACK_FIELD = 'welcomeNoticeVersion'
  * Bump only when the notice changes materially and every user should see it
  * again. The acknowledgement is compared for exact equality.
  */
-export const WELCOME_NOTICE_VERSION = '2026-08-13.1'
+export const WELCOME_NOTICE_VERSION = '2026-11-28.1'
 
-/** The complete editable internal-testing notice in both supported GUI locales. */
+/** OhamLab Harness welcome experience in both supported GUI locales. */
 export const WELCOME_NOTICE_COPY = {
   zh: {
-    title: '内测声明',
-    body: 'DeepSeek Harness 目前的 0.1 版本仍处在面向 Harness 开发者进行测试的阶段，还有许多地方需要持续改进和打磨，希望听取广大开发者的反馈建议。预计 DeepSeek Harness 的核心插件以及基础 API 都会在接下来的一段时间内快速迭代、持续演化。\n\n我们期待与全球开发者一起，在开源、开放、可复用、可组合的基础设施之上，共同探索智能上限。欢迎全球 Harness 开发者加入 DSH 插件生态。',
-    continueLabel: '继续',
+    title: '欢迎使用 OhamLab Harness',
+    body: '欢迎来到 OhamLab Harness，一个开放、灵活且可扩展的智能体平台，旨在让人工智能更加易用、强大和个性化。\n\n通过多模型支持、可扩展插件、可复用技能和智能自动化，OhamLab Harness 让您能够自由构建、定制和扩展属于自己的 AI 工作空间，而不受单一模型或服务提供商的限制。\n\n我们相信开放创新、社区协作和持续进步的力量。无论您是开发者、创作者、研究人员，还是 AI 探索者，都欢迎您与我们一起探索智能的无限可能。\n\n自由构建，智能探索，无限创新。\n\n欢迎加入 OhamLab 生态系统。',
+    continueLabel: '开始探索',
   },
   en: {
-    title: 'Internal Testing Notice',
-    body: "DeepSeek Harness 0.1 remains in testing for Harness developers. Many areas need further improvement, and we welcome feedback from the developer community. DeepSeek Harness's core plugins and foundational APIs will continue to evolve rapidly over the coming months.\n\nWe look forward to exploring the limits of intelligence with developers around the world, building on open-source, open, reusable, and composable infrastructure. We welcome Harness developers everywhere to join the DSH plugin ecosystem.",
-    continueLabel: 'Continue',
+    title: 'Welcome to OhamLab Harness',
+    body: 'Welcome to OhamLab Harness — an open, flexible, and extensible AI agent platform designed to make artificial intelligence more accessible, powerful, and personal.\n\nWith multi-model support, extensible plugins, reusable skills, and intelligent automation, OhamLab Harness empowers you to build, customize, and evolve your own AI workspace without being tied to a single model or provider.\n\nWe believe in open innovation, community collaboration, and continuous improvement. Whether you are a developer, creator, researcher, or AI enthusiast, we invite you to explore new possibilities and shape the future of intelligent agents with us.\n\nBuild freely. Think intelligently. Create without limits.\n\nWelcome to the OhamLab ecosystem.',
+    continueLabel: 'Get Started',
   },
 } as const
